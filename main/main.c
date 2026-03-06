@@ -35,7 +35,7 @@
 #define BUTTON_GPIO    GPIO_NUM_4
 #define OTA_LED_GPIO   GPIO_NUM_5
 
-#define OTA_FIRMWARE_URL "https://github.com/niteshkumar-curious/esp32-ota-firmware/blob/main/firmware_ota/esp32_upt.bin"
+#define OTA_FIRMWARE_URL "https://github.com/niteshkumar-curious/esp32-ota-firmware/raw/refs/heads/main/firmware_ota/esp32_upt.bin"
 
 /* ================= GLOBALS ================= */
 

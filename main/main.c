@@ -27,13 +27,13 @@
 
 /* ================= USER CONFIG ================= */
 
-#define MQTT_TOPIC_CMD     "esp32/device1/led"
-#define MQTT_TOPIC_STATUS  "esp32/device1/status"
-#define MQTT_TOPIC_OTA     "esp32/device1/ota"
+#define MQTT_TOPIC_CMD "esp32/device1/led"
+#define MQTT_TOPIC_STATUS "esp32/device1/status"
+#define MQTT_TOPIC_OTA "esp32/device1/ota"
 
-#define LED_GPIO       GPIO_NUM_2
-#define BUTTON_GPIO    GPIO_NUM_4
-#define OTA_LED_GPIO   GPIO_NUM_5
+#define LED_GPIO GPIO_NUM_2
+#define BUTTON_GPIO GPIO_NUM_4
+#define OTA_LED_GPIO GPIO_NUM_5
 
 #define OTA_FIRMWARE_URL "https://github.com/niteshkumar-curious/esp32-ota-firmware/raw/refs/heads/main/firmware_ota/esp32_upt.bin"
 
@@ -105,7 +105,7 @@ static void start_ota_update()
     {
         ESP_LOGE(TAG, "OTA failed");
 
-        for(int i = 0; i < 6; i++)
+        for (int i = 0; i < 6; i++)
         {
             gpio_set_level(OTA_LED_GPIO, 1);
             vTaskDelay(pdMS_TO_TICKS(200));
@@ -129,14 +129,14 @@ static void wifi_event_handler(void *arg,
 
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
-        ESP_LOGI(TAG,"WiFi reconnecting...");
+        ESP_LOGI(TAG, "WiFi reconnecting...");
         esp_wifi_connect();
         xEventGroupClearBits(wifi_event_group, WIFI_CONNECTED_BIT);
     }
 
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
-        ESP_LOGI(TAG,"WiFi connected");
+        ESP_LOGI(TAG, "WiFi connected");
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
@@ -199,9 +199,9 @@ static void obtain_time(void)
 
 /* ================= BUTTON ISR ================= */
 
-static void IRAM_ATTR button_isr_handler(void* arg)
+static void IRAM_ATTR button_isr_handler(void *arg)
 {
-    uint32_t gpio_num = (uint32_t) arg;
+    uint32_t gpio_num = (uint32_t)arg;
     xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
 }
 
@@ -236,7 +236,7 @@ static void button_task(void *arg)
                 }
                 else
                 {
-                    ESP_LOGW(TAG,"MQTT not connected, publish skipped");
+                    ESP_LOGW(TAG, "MQTT not connected, publish skipped");
                 }
             }
         }
@@ -273,7 +273,7 @@ static void mqtt_event_handler(void *handler_args,
 
     case MQTT_EVENT_DISCONNECTED:
 
-        ESP_LOGW(TAG,"MQTT disconnected");
+        ESP_LOGW(TAG, "MQTT disconnected");
         mqtt_connected = false;
         break;
 
@@ -288,7 +288,7 @@ static void mqtt_event_handler(void *handler_args,
 
         if (strncmp(event->topic, MQTT_TOPIC_OTA, event->topic_len) == 0)
         {
-            ESP_LOGI(TAG,"OTA command received");
+            ESP_LOGI(TAG, "OTA command received");
             start_ota_update();
         }
 
@@ -333,7 +333,15 @@ static void mqtt_app_start(void)
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
+    esp_err_t ret = nvs_flash_init();
+
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+
+    ESP_ERROR_CHECK(ret);
 
     gpio_config_t led_conf = {
         .pin_bit_mask = (1ULL << LED_GPIO) | (1ULL << OTA_LED_GPIO),
@@ -355,10 +363,10 @@ void app_main(void)
 
     gpio_isr_handler_add(BUTTON_GPIO,
                          button_isr_handler,
-                         (void*) BUTTON_GPIO);
+                         (void *)BUTTON_GPIO);
 
-    xTaskCreate(button_task,"button_task",2048,NULL,5,NULL);
-    xTaskCreate(ota_led_task,"ota_led",2048,NULL,4,NULL);
+    xTaskCreate(button_task, "button_task", 2048, NULL, 5, NULL);
+    xTaskCreate(ota_led_task, "ota_led", 2048, NULL, 4, NULL);
 
     wifi_init();
     obtain_time();

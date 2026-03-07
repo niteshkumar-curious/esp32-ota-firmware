@@ -85,3 +85,6 @@ main/mydata.h
 .clangd
 
 components/components
+
+# backend
+BACKEND/node_modules/

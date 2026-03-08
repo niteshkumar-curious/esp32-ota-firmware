@@ -8,21 +8,33 @@ function App() {
     const [led, setLed] = useState("0")
     const [device, setDevice] = useState("offline")
     const [otaProgress, setOtaProgress] = useState(0)
+    const [otaResult, setOtaResult] = useState("")
     const [updating, setUpdating] = useState(false)
 
     const loadStatus = async() => {
 
         try {
+
             const res = await axios.get(API + "/status")
 
             setLed(res.data.led)
             setDevice(res.data.device)
 
-            if (res.data.ota) {
+            if (res.data.ota !== undefined) {
                 setOtaProgress(res.data.ota)
             }
 
+            if (res.data.otaResult) {
+
+                setOtaResult(res.data.otaResult)
+
+                if (res.data.otaResult === "success" || res.data.otaResult === "failed") {
+                    setUpdating(false)
+                }
+            }
+
         } catch {
+
             setDevice("offline")
         }
     }
@@ -39,19 +51,32 @@ function App() {
 
     const toggleLed = async() => {
 
+        if (device !== "online") return
+
         const newState = led === "1" ? "0" : "1"
 
-        await axios.post(API + "/led", { state: newState })
+        try {
 
-        setLed(newState)
+            const res = await axios.post(API + "/led", { state: newState })
+
+            if (res.data.success) {
+                setLed(newState)
+            }
+
+        } catch {}
     }
 
     const ota = async() => {
 
+        if (device !== "online") return
+
         setUpdating(true)
         setOtaProgress(0)
+        setOtaResult("")
 
-        await axios.post(API + "/ota")
+        try {
+            await axios.post(API + "/ota")
+        } catch {}
     }
 
     return (
@@ -88,10 +113,26 @@ function App() {
         h2 > LED Status: { led === "1" ? "ON" : "OFF" } < /h2>
 
         <
-        button style = { styles.button }
-        onClick = { toggleLed } >
+        button style = {
+            {
+                ...styles.button,
+                    opacity: device !== "online" ? 0.5 : 1,
+                    cursor: device !== "online" ? "not-allowed" : "pointer"
+            }
+        }
+        onClick = { toggleLed }
+        disabled = { device !== "online" } >
         Toggle LED <
         /button>
+
+        {
+            device !== "online" && ( <
+                p style = {
+                    { color: "#f87171", marginTop: "10px" } } >
+                Device offline <
+                /p>
+            )
+        }
 
         <
         /div>
@@ -103,8 +144,15 @@ function App() {
         h2 > OTA Firmware Update < /h2>
 
         <
-        button style = { styles.otaButton }
-        onClick = { ota } >
+        button style = {
+            {
+                ...styles.otaButton,
+                    opacity: device !== "online" ? 0.5 : 1,
+                    cursor: device !== "online" ? "not-allowed" : "pointer"
+            }
+        }
+        onClick = { ota }
+        disabled = { device !== "online" } >
         Start OTA <
         /button>
 
@@ -129,6 +177,24 @@ function App() {
                 <
                 /div>
 
+            )
+        }
+
+        {
+            otaResult === "success" && ( <
+                p style = {
+                    { color: "#22c55e", marginTop: "10px" } } >
+                Update Successful <
+                /p>
+            )
+        }
+
+        {
+            otaResult === "failed" && ( <
+                p style = {
+                    { color: "#ef4444", marginTop: "10px" } } >
+                Update Failed <
+                /p>
             )
         }
 
@@ -171,8 +237,7 @@ const styles = {
         borderRadius: "6px",
         background: "#3b82f6",
         color: "white",
-        fontSize: "16px",
-        cursor: "pointer"
+        fontSize: "16px"
     },
 
     otaButton: {
@@ -182,8 +247,7 @@ const styles = {
         borderRadius: "6px",
         background: "#22c55e",
         color: "white",
-        fontSize: "16px",
-        cursor: "pointer"
+        fontSize: "16px"
     },
 
     progressContainer: {

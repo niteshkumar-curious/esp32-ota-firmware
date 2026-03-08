@@ -30,6 +30,8 @@
 #define MQTT_TOPIC_CMD "esp32/device1/led"
 #define MQTT_TOPIC_STATUS "esp32/device1/status"
 #define MQTT_TOPIC_OTA "esp32/device1/ota"
+#define MQTT_TOPIC_OTA_PROGRESS "esp32/device1/ota_progress"
+#define MQTT_TOPIC_OTA_RESULT "esp32/device1/ota_result"
 
 #define LED_GPIO GPIO_NUM_2
 #define BUTTON_GPIO GPIO_NUM_4
@@ -72,6 +74,27 @@ static void ota_led_task(void *arg)
     }
 }
 
+/* ================= STATUS HEARTBEAT ================= */
+
+static void status_task(void *arg)
+{
+    while (1)
+    {
+        if (mqtt_connected)
+        {
+            esp_mqtt_client_publish(
+                mqtt_client,
+                MQTT_TOPIC_STATUS,
+                "online",
+                0,
+                1,
+                1);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
+
 /* ================= OTA UPDATE ================= */
 
 static void start_ota_update()
@@ -90,11 +113,68 @@ static void start_ota_update()
         .http_config = &http_config,
     };
 
-    esp_err_t ret = esp_https_ota(&ota_config);
+    esp_https_ota_handle_t https_ota_handle = NULL;
 
-    if (ret == ESP_OK)
+    if (esp_https_ota_begin(&ota_config, &https_ota_handle) != ESP_OK)
+    {
+        ESP_LOGE(TAG, "OTA begin failed");
+        ota_running = false;
+        return;
+    }
+
+    int last_percent = 0;
+
+    while (1)
+    {
+        esp_err_t err = esp_https_ota_perform(https_ota_handle);
+
+        if (err != ESP_ERR_HTTPS_OTA_IN_PROGRESS)
+            break;
+
+        int downloaded = esp_https_ota_get_image_len_read(https_ota_handle);
+        int total = esp_https_ota_get_image_size(https_ota_handle);
+
+        if (total > 0)
+        {
+            int percent = (downloaded * 100) / total;
+
+            if (percent != last_percent)
+            {
+                char msg[10];
+                sprintf(msg, "%d", percent);
+
+                esp_mqtt_client_publish(
+                    mqtt_client,
+                    MQTT_TOPIC_OTA_PROGRESS,
+                    msg,
+                    0,
+                    1,
+                    0);
+
+                last_percent = percent;
+            }
+        }
+    }
+
+    if (esp_https_ota_finish(https_ota_handle) == ESP_OK)
     {
         ESP_LOGI(TAG, "OTA successful");
+
+        esp_mqtt_client_publish(
+            mqtt_client,
+            MQTT_TOPIC_OTA_PROGRESS,
+            "100",
+            0,
+            1,
+            0);
+
+        esp_mqtt_client_publish(
+            mqtt_client,
+            MQTT_TOPIC_OTA_RESULT,
+            "success",
+            0,
+            1,
+            0);
 
         gpio_set_level(OTA_LED_GPIO, 1);
         vTaskDelay(pdMS_TO_TICKS(3000));
@@ -105,13 +185,13 @@ static void start_ota_update()
     {
         ESP_LOGE(TAG, "OTA failed");
 
-        for (int i = 0; i < 6; i++)
-        {
-            gpio_set_level(OTA_LED_GPIO, 1);
-            vTaskDelay(pdMS_TO_TICKS(200));
-            gpio_set_level(OTA_LED_GPIO, 0);
-            vTaskDelay(pdMS_TO_TICKS(200));
-        }
+        esp_mqtt_client_publish(
+            mqtt_client,
+            MQTT_TOPIC_OTA_RESULT,
+            "failed",
+            0,
+            1,
+            0);
 
         ota_running = false;
     }
@@ -233,10 +313,6 @@ static void button_task(void *arg)
                         1,
                         1,
                         1);
-                }
-                else
-                {
-                    ESP_LOGW(TAG, "MQTT not connected, publish skipped");
                 }
             }
         }
@@ -367,6 +443,7 @@ void app_main(void)
 
     xTaskCreate(button_task, "button_task", 2048, NULL, 5, NULL);
     xTaskCreate(ota_led_task, "ota_led", 2048, NULL, 4, NULL);
+    xTaskCreate(status_task, "status_task", 2048, NULL, 4, NULL);
 
     wifi_init();
     obtain_time();

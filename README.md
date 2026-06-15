@@ -88,4 +88,4 @@ Through this project, I gained practical experience in:
 
 Electronics and Communication Engineering
 
-GitHub: https://github.com/niteshkumar-curious
+Project Link: https://github.com/niteshkumar-curious/esp32-ota-firmware

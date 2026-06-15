@@ -76,10 +76,8 @@ Through this project, I gained practical experience in:
 
 ## Future Improvements
 
-* Web dashboard for update management
 * Digital signature verification
 * Delta firmware updates
-* Update progress monitoring
 * Device fleet management
 
 ## Author
@@ -88,4 +86,4 @@ Through this project, I gained practical experience in:
 
 Electronics and Communication Engineering
 
-Project Link: https://github.com/niteshkumar-curious/esp32-ota-firmware
+Github: https://github.com/niteshkumar-curious

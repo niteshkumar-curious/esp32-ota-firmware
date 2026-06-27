@@ -1,89 +1,253 @@
-# ESP32 OTA Firmware Management and Rollback System
+# ESP32 OTA Firmware Management, Rollback and IoT Device Dashboard
 
 ## Overview
 
-This project demonstrates a secure Over-The-Air (OTA) firmware update system for ESP32 using ESP-IDF. The system enables remote firmware updates without physical access to the device while ensuring reliability through firmware version management and rollback support.
+This project demonstrates a secure, modular Over-The-Air (OTA) firmware update system for the ESP32 using **ESP-IDF**. It enables remote firmware updates without requiring physical access to the device while providing firmware version management, rollback capability, remote monitoring, and an IoT dashboard.
 
-The project uses MQTT for device communication, HTTPS for secure firmware download, and FreeRTOS for multitasking operation.
+The project uses **MQTT** for bidirectional communication, **HTTPS** for secure firmware download, **FreeRTOS** for multitasking, and a **Node.js + React** web dashboard for device management.
 
-## Features
+---
 
-* OTA firmware update using ESP-IDF
-* Secure firmware download over HTTPS
-* MQTT-based communication
+# Features
+
+* Secure OTA firmware updates using ESP-IDF
+* HTTPS firmware download with TLS
+* MQTT-based remote device communication
+* Modular firmware architecture
 * Firmware version management
-* Rollback mechanism for failed updates
-* FreeRTOS-based multitasking architecture
-* GitHub-hosted firmware images
-* Serial monitoring and debugging support
+* Rollback support
+* Automatic firmware validation after OTA
+* Real-time OTA progress reporting
+* Device online/offline monitoring
+* LED remote control through MQTT
+* Web dashboard for device management
+* NTC Thermistor temperature monitoring (Firmware v1.0.4)
+* GitHub-hosted firmware binaries
 
-## Technologies Used
+---
 
-### Hardware
+# Firmware Versions
+
+| Version    | Features                                                                   |
+| ---------- | -------------------------------------------------------------------------- |
+| **v1.0.1** | Initial OTA implementation with MQTT communication                         |
+| **v1.0.2** | Improved OTA workflow and dashboard integration                            |
+| **v1.0.3** | Firmware validation and rollback enhancements                              |
+| **v1.0.4** | Added NTC Thermistor temperature monitoring, ADC averaging and PWM control |
+
+---
+
+# System Architecture
+
+```text
+                GitHub Firmware Repository
+                         │
+                     HTTPS Download
+                         │
+               ┌──────── ESP32 ────────┐
+               │                       │
+         FreeRTOS Tasks           OTA Manager
+               │                       │
+          ADC / PWM             Firmware Validation
+               │                       │
+               └──── MQTT over TLS ────┘
+                         │
+                  HiveMQ Cloud Broker
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+      Node.js Backend             React Dashboard
+```
+
+---
+
+# Dashboard Features
+
+* Device online/offline indication
+* Current firmware version
+* OTA firmware selection
+* OTA update progress bar
+* Rollback button
+* Firmware result notification
+* Temperature display (available only in Firmware v1.0.4)
+
+---
+
+# Project Structure
+
+```text
+main/
+│
+├── main.c
+├── task_handling.c
+├── task_handling.h
+├── mqtt_ota_connect.c
+├── mqtt_ota_connect.h
+├── wifi.c
+├── wifi.h
+├── adc_cal_us.c
+├── adc_cal_us.h
+├── gpio_user_config.c
+├── gpio_user_config.h
+├── common_header.h
+├── mydata.h
+└── CMakeLists.txt
+
+firmware_ota/
+├── fw_v101.bin
+├── fw_v102.bin
+├── fw_v103.bin
+└── fw_v104.bin
+
+front-end/
+
+README.md
+```
+
+---
+
+# FreeRTOS Tasks
+
+| Task         | Function                                                  |
+| ------------ | --------------------------------------------------------- |
+| sensor_task  | Reads ADC, calculates temperature, updates PWM            |
+| status_task  | Publishes device status, firmware version and temperature |
+| ota_led_task | Indicates OTA progress using LED                          |
+
+---
+
+# MQTT Topics
+
+| Topic                      | Description               |
+| -------------------------- | ------------------------- |
+| esp32/device1/status       | Device online status      |
+| esp32/device1/led          | LED control               |
+| esp32/device1/ota          | OTA update request        |
+| esp32/device1/ota_progress | OTA progress              |
+| esp32/device1/ota_result   | OTA result                |
+| esp32/device1/version      | Running firmware version  |
+| esp32/device1/temperature  | Temperature data (v1.0.4) |
+
+---
+
+# Technologies Used
+
+## Hardware
 
 * ESP32 Development Board
+* 10k NTC Thermistor
+* Fixed resistor (Voltage Divider)
 
-### Software
+## Software
 
 * ESP-IDF
 * Embedded C
 * FreeRTOS
 * MQTT
 * HTTPS
+* Node.js
+* Express.js
+* React.js
+* Axios
+* HiveMQ Cloud
 * GitHub
+* Netlify
+* Render
 
-## System Workflow
+---
+
+# OTA Workflow
 
 1. ESP32 connects to Wi-Fi.
-2. Device subscribes to MQTT topics.
-3. Update notification is received through MQTT.
-4. ESP32 checks firmware version.
-5. New firmware is downloaded securely using HTTPS.
-6. Device reboots into the new firmware.
-7. If validation fails, rollback is triggered automatically.
+2. MQTT connection is established.
+3. Device publishes its firmware version.
+4. Dashboard displays current firmware.
+5. User selects a firmware version.
+6. Backend publishes OTA request.
+7. ESP32 downloads firmware via HTTPS.
+8. OTA progress is reported to the dashboard.
+9. Device reboots.
+10. Firmware performs self-validation.
+11. If validation succeeds, firmware is marked valid.
+12. Otherwise, automatic rollback is performed.
 
-## Project Structure
+---
 
-```text
-main/
-├── CMakeLists.txt
-└── main.c
+# Temperature Monitoring (Firmware v1.0.4)
 
-.gitignore
-```
+Firmware v1.0.4 introduces temperature monitoring using a 10k NTC thermistor.
 
-## Key Concepts Demonstrated
+Features include:
 
-* OTA Update Process
+* ADC calibration
+* 64-sample averaging
+* Beta parameter temperature calculation
+* PWM duty cycle proportional to ADC value
+* Temperature published through MQTT
+* Dashboard displays temperature only when firmware v1.0.4 is running
+
+---
+
+# Key Concepts Demonstrated
+
+* ESP-IDF OTA Updates
+* FreeRTOS Multitasking
+* MQTT Publish/Subscribe
+* HTTPS Secure Communication
+* Firmware Rollback
 * Firmware Validation
-* Rollback Recovery
-* MQTT Messaging
-* Secure HTTPS Communication
-* ESP-IDF Application Development
-* FreeRTOS Task Management
+* ADC Calibration
+* Thermistor Temperature Measurement
+* PWM Control
+* Modular Embedded Software Design
+* REST API Development
+* React Dashboard Development
 
-## Learning Outcomes
+---
 
-Through this project, I gained practical experience in:
+# Learning Outcomes
 
-* Embedded firmware development
-* ESP32 application development using ESP-IDF
-* FreeRTOS task management
-* MQTT communication protocols
-* HTTPS-based secure firmware delivery
-* Firmware version control and rollback strategies
-* Embedded system debugging and testing
+This project provided practical experience in:
 
-## Future Improvements
+* ESP32 firmware development
+* Embedded C programming
+* ESP-IDF component-based project structure
+* FreeRTOS task scheduling
+* MQTT communication
+* HTTPS OTA firmware updates
+* Firmware version management
+* Rollback strategies
+* ADC calibration techniques
+* Thermistor temperature sensing
+* REST API development using Express.js
+* React dashboard development
+* Git and GitHub version control
+* Deploying backend on Render
+* Deploying frontend on Netlify
 
-* Digital signature verification
-* Delta firmware updates
-* Device fleet management
+---
 
-## Author
+# Future Improvements
+
+* Secure Boot
+* Flash Encryption
+* Digital Signature Verification
+* Delta OTA Updates
+* Multiple Device Management
+* Device Authentication
+* Sensor Data Logging
+* Historical Temperature Graphs
+* OTA Scheduling
+* Mobile Dashboard
+* ESP32 CAN Bus Integration
+
+---
+
+# Author
 
 **H Nitesh Kumar**
 
-Electronics and Communication Engineering
+B.E. Electronics and Communication Engineering
 
-Github: https://github.com/niteshkumar-curious
+GitHub:
+https://github.com/niteshkumar-curious

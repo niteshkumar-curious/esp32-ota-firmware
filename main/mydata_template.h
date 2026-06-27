@@ -1,6 +1,8 @@
 #ifndef MYDATA_H
 #define MYDATA_H
 
+#define WIFI_SSID "......"
+#define WIFI_PASS "YOUR_PASSWORD"
 #define MQTT_URI  "mqtts://your-server.s1.eu.hivemq.cloud:8883"
 #define MQTT_USER "YOUR_USERNAME"
 #define MQTT_PASS "YOUR_PASSWORD"

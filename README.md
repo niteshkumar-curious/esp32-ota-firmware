@@ -29,11 +29,11 @@ The project uses **MQTT** for bidirectional communication, **HTTPS** for secure 
 # Firmware Versions
 
 | Version    | Features                                                                   |
-| ---------- | -------------------------------------------------------------------------- |
-| **v1.0.1** | Initial OTA implementation with MQTT communication                         |
-| **v1.0.2** | Improved OTA workflow and led blink                                           |
-| **v1.0.3** | Firmware validation and rollback enhancements                              |
-| **v1.0.4** | Added NTC Thermistor temperature monitoring, ADC averaging and PWM control |
+| ---------- | --------------------------------------------------------------------------- |
+| **v1.0.1** | Initial OTA implementation with MQTT communication                          |
+| **v1.0.2** | Improved OTA workflow and led blink and manual push button using interrupt  |
+| **v1.0.3** | Firmware validation and rollback enhancements                               |
+| **v1.0.4** | Added NTC Thermistor temperature monitoring, ADC averaging and PWM control  |
 
 ---
 

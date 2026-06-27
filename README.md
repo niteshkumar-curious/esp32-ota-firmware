@@ -31,7 +31,7 @@ The project uses **MQTT** for bidirectional communication, **HTTPS** for secure 
 | Version    | Features                                                                   |
 | ---------- | -------------------------------------------------------------------------- |
 | **v1.0.1** | Initial OTA implementation with MQTT communication                         |
-| **v1.0.2** | Improved OTA workflow and dashboard integration                            |
+| **v1.0.2** | Improved OTA workflow and led blink                                           |
 | **v1.0.3** | Firmware validation and rollback enhancements                              |
 | **v1.0.4** | Added NTC Thermistor temperature monitoring, ADC averaging and PWM control |
 
@@ -180,7 +180,7 @@ Firmware v1.0.4 introduces temperature monitoring using a 10k NTC thermistor.
 Features include:
 
 * ADC calibration
-* 64-sample averaging
+* 5-sample averaging
 * Beta parameter temperature calculation
 * PWM duty cycle proportional to ADC value
 * Temperature published through MQTT
